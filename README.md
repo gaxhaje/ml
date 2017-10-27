@@ -1,2 +1,2 @@
-# Machine Learning with Octave
-Learning ML concepts.
+# Machine Learning
+Learning ML concepts in Octave.
