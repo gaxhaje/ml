@@ -1,5 +1,5 @@
 ## calculate nearest neighor
-function retval = kkn(trainSet, testSet, yTrain, k)
+function retval = knn(trainSet, testSet, yTrain, k)
   retval = 0;
   M = pdist2(trainSet, testSet);
   
