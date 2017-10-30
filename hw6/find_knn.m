@@ -15,47 +15,98 @@ yTest = str2num4label(y2, yTestUnique);   # get the unique vector number for eac
 # normalize data
 trainSet = normalize(trainSet);
 testSet  = normalize(testSet);
-
-# k-fold partition   
-CVO = cvpartition(yTrain, 'KFold', 10);
-numTestSets = get(CVO, 'NumTestSets');
-C = struct(CVO).inds;
-E = zeros(numTestSets, 1);
-k = 20;
-
-# print the number of 'k' instances
-fprintf(' K = %d\n', k);
-
-# cross-validation
-correctInstCnt = 0;   # total number of correct classfier instances
-testInstCnt = 0;      # total number of test instances
-for i = 1:numTestSets
-  testIdx = cvotest(C, i);
-  trainIdx = cvotraining(C, i);
-  testSize = get(CVO, 'TestSize')(i);
-  testInstCnt += testSize;
   
-  for j = 1:k
-    yTestP = knn(trainSet(trainIdx,:), trainSet(testIdx,:), yTrain(trainIdx,:), j); # predictions
+# k-fold partition   
+K_all = [10 15 20 25];
+
+correctInstCnt = 0;     # total number of correct classfier instances
+
+for i = 1:numel(K_all)  # run for each k instance
+  k =  K_all(i)         # assign k
+ 
+  # partition data with 'k-fold' method
+  CVO = cvpartition(yTrain, 'KFold', 10);
+  numTestSets = get(CVO, 'NumTestSets');
+  C = struct(CVO).inds;
+  E = zeros(numTestSets, 1);
+   
+  # cross-validation
+  for j = 1:numTestSets
+    testIdx = cvotest(C, j);
+    trainIdx = cvotraining(C, j);
+    testSize = get(CVO, 'TestSize')(j);
+    
+    yTestP = knn(trainSet(trainIdx,:), trainSet(testIdx,:), yTrain(trainIdx,:), k); # predictions
     err(j) = sum(1 - (yTestP == yTrain(testIdx)'))./testSize;                       # average error of 'testSize'
   endfor
   
+  #{
   # print predictions
   str_prediction = num2str4label(yTestP', yTrainUnique);
-  #fprintf('\n   Predictions  | Actual result\n');
-  for l = 1:length(str_prediction)
+  str_actual = num2str4label(yTrain, yTrainUnique);
+  fprintf('\n   Predictions  | Actual result\n');
+  for l = 1:length(yTestP)
     predct = str_prediction(l){1};
-    actual = y1(l){1};
-    #fprintf('\t%s\t|\t%s\n', predct, actual);
-    if (strcmp(predct, actual)) 
+    actual = str_actual(l){1};
+    fprintf('\t%s\t|\t%s\n', predct, actual);
+    if (strcmp(predct, actual))
       correctInstCnt++;
     endif
   endfor
+  fprintf('\n Correct instances: %d out of %d\n\n', correctInstCnt, length(yTestP));
+  #}
   
-  E(i) = sum(err)/k;  # average error of 'k' iteration
+  Err_all(i) = sum(err)/k;  # average error of 'k' iteration
 endfor
 
-fprintf('\n Total number of correct classified instances: %d', correctInstCnt);
-fprintf('\n Total number of test instances: %d\n', testInstCnt); 
-fprintf('\n Min error = %d\n\n', min(E));
+[K_all' Err_all']   # error for each 'k' instance
+fprintf('\n Min error = %d\n\n', min(Err_all));
 
+
+##########
+# part 2 #
+##########
+
+# plot test-set accuracy as a function of k, for k =1,5,10,15,20
+K_part2_1 = [1 5 10 15 20];
+for i = 1:numel(K_part2_1)
+  k = K_part2_1(i);
+  yTestP = knn(trainSet, testSet, yTrain, k); # predictions
+  Err_part2_1(i) = sum(1 - (yTestP == yTest'))./length(yTest);
+endfor
+
+# plot accuracy
+figure 1;
+plot(K_part2_1, Err_part2_1);
+title('Test-set accuracy');
+xlabel('Value of k');
+ylabel('Error accuracy');
+legend('Error function');
+
+# confusion-matrix
+K_part2_2 = [1 15];
+cm_len = length(yTestUnique);  # set confusion-matrix dimensions
+
+for i = 1:numel(K_part2_2)
+  k = K_part2_2(i);
+  
+  printf('\n k = %d\n', k);
+    
+  confusion_matrix = zeros(cm_len, cm_len);
+  yTestP = knn(trainSet, testSet, yTrain, k); # predictions
+  Err_part2_2(i) = sum(1 - (yTestP == yTest'))./length(yTest);
+  
+  for j = 1:cm_len
+    accuracy = find(yTest == j);
+    
+    for l = 1:cm_len
+      prediction = find(yTestP == l);
+      confusion_matrix(j, l) = sum(ismember(accuracy, prediction'));
+    endfor
+  endfor
+  
+  disp(confusion_matrix);
+endfor
+  
+Err_by_K = [K_part2_2' Err_part2_2']
+  
