@@ -1,5 +1,5 @@
 # read the training data
-D = dlmread('/home/ergels/Downloads/linear-regression.train.csv');
+D = dlmread('linear-regression.train.csv');
 
 # initialize matracies and variables
 x = D(:, 1); 
